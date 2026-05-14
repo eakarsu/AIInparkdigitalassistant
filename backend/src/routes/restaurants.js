@@ -6,8 +6,15 @@ const router = express.Router();
 
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM restaurants ORDER BY name');
-    res.json(result.rows);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+    const offset = (page - 1) * limit;
+    const [dataResult, countResult] = await Promise.all([
+      pool.query('SELECT * FROM restaurants ORDER BY name LIMIT $1 OFFSET $2', [limit, offset]),
+      pool.query('SELECT COUNT(*) FROM restaurants')
+    ]);
+    const total = parseInt(countResult.rows[0].count);
+    res.json({ data: dataResult.rows, pagination: { page, limit, total, totalPages: Math.ceil(total / limit), hasNext: page * limit < total, hasPrev: page > 1 } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

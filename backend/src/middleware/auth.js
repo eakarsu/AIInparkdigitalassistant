@@ -1,7 +1,12 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config({ path: require('path').join(__dirname, '../../../.env') });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'parkassistant_jwt_secret_2024';
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET not set');
+  process.exit(1);
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];

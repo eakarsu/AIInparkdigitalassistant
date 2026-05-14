@@ -22,6 +22,11 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
+    // Attach a human-readable flag for rate limiting
+    if (error.response?.status === 429) {
+      error.isRateLimit = true;
+      error.rateLimitMessage = error.response?.data?.error || 'AI rate limit exceeded. Please wait before trying again.';
+    }
     return Promise.reject(error);
   }
 );
@@ -32,7 +37,7 @@ export const authAPI = {
 };
 
 export const ridesAPI = {
-  getAll: () => api.get('/rides'),
+  getAll: (page = 1, limit = 20) => api.get(`/rides?page=${page}&limit=${limit}`),
   getById: (id) => api.get(`/rides/${id}`),
   create: (data) => api.post('/rides', data),
   update: (id, data) => api.put(`/rides/${id}`, data),
@@ -40,7 +45,7 @@ export const ridesAPI = {
 };
 
 export const showsAPI = {
-  getAll: () => api.get('/shows'),
+  getAll: (page = 1, limit = 20) => api.get(`/shows?page=${page}&limit=${limit}`),
   getById: (id) => api.get(`/shows/${id}`),
   create: (data) => api.post('/shows', data),
   update: (id, data) => api.put(`/shows/${id}`, data),
@@ -48,7 +53,7 @@ export const showsAPI = {
 };
 
 export const restaurantsAPI = {
-  getAll: () => api.get('/restaurants'),
+  getAll: (page = 1, limit = 20) => api.get(`/restaurants?page=${page}&limit=${limit}`),
   getById: (id) => api.get(`/restaurants/${id}`),
   create: (data) => api.post('/restaurants', data),
   update: (id, data) => api.put(`/restaurants/${id}`, data),
@@ -56,7 +61,7 @@ export const restaurantsAPI = {
 };
 
 export const attractionsAPI = {
-  getAll: () => api.get('/attractions'),
+  getAll: (page = 1, limit = 20) => api.get(`/attractions?page=${page}&limit=${limit}`),
   getById: (id) => api.get(`/attractions/${id}`),
   create: (data) => api.post('/attractions', data),
   update: (id, data) => api.put(`/attractions/${id}`, data),
@@ -64,7 +69,7 @@ export const attractionsAPI = {
 };
 
 export const eventsAPI = {
-  getAll: () => api.get('/events'),
+  getAll: (page = 1, limit = 20) => api.get(`/events?page=${page}&limit=${limit}`),
   getById: (id) => api.get(`/events/${id}`),
   create: (data) => api.post('/events', data),
   update: (id, data) => api.put(`/events/${id}`, data),
@@ -72,7 +77,7 @@ export const eventsAPI = {
 };
 
 export const giftShopsAPI = {
-  getAll: () => api.get('/gift-shops'),
+  getAll: (page = 1, limit = 20) => api.get(`/gift-shops?page=${page}&limit=${limit}`),
   getById: (id) => api.get(`/gift-shops/${id}`),
   create: (data) => api.post('/gift-shops', data),
   update: (id, data) => api.put(`/gift-shops/${id}`, data),
@@ -80,7 +85,7 @@ export const giftShopsAPI = {
 };
 
 export const facilitiesAPI = {
-  getAll: () => api.get('/facilities'),
+  getAll: (page = 1, limit = 20) => api.get(`/facilities?page=${page}&limit=${limit}`),
   getById: (id) => api.get(`/facilities/${id}`),
   create: (data) => api.post('/facilities', data),
   update: (id, data) => api.put(`/facilities/${id}`, data),
@@ -88,7 +93,7 @@ export const facilitiesAPI = {
 };
 
 export const parkZonesAPI = {
-  getAll: () => api.get('/park-zones'),
+  getAll: (page = 1, limit = 20) => api.get(`/park-zones?page=${page}&limit=${limit}`),
   getById: (id) => api.get(`/park-zones/${id}`),
   create: (data) => api.post('/park-zones', data),
   update: (id, data) => api.put(`/park-zones/${id}`, data),
@@ -96,7 +101,7 @@ export const parkZonesAPI = {
 };
 
 export const ticketsAPI = {
-  getAll: () => api.get('/tickets'),
+  getAll: (page = 1, limit = 20) => api.get(`/tickets?page=${page}&limit=${limit}`),
   getById: (id) => api.get(`/tickets/${id}`),
   create: (data) => api.post('/tickets', data),
   update: (id, data) => api.put(`/tickets/${id}`, data),
@@ -108,6 +113,13 @@ export const aiAPI = {
   recommendRides: (data) => api.post('/ai/recommend-rides', data),
   planItinerary: (data) => api.post('/ai/plan-itinerary', data),
   recommendDining: (data) => api.post('/ai/recommend-dining', data),
+  buildPlan: (data) => api.post('/ai/build-plan', data),
+  getSession: (sessionId) => api.get(`/ai/session/${sessionId}`),
+};
+
+export const guestsAPI = {
+  getPreferences: () => api.get('/guests/preferences'),
+  savePreferences: (data) => api.post('/guests/preferences', data),
 };
 
 export default api;

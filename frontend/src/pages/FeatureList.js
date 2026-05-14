@@ -180,22 +180,34 @@ function FeatureList({ feature }) {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({});
+  const [pagination, setPagination] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rateLimitError, setRateLimitError] = useState('');
+  const PAGE_SIZE = 20;
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (page = 1) => {
     try {
       setLoading(true);
-      const res = await config.api.getAll();
-      setItems(res.data);
+      const res = await config.api.getAll(page, PAGE_SIZE);
+      // Handle both paginated {data, pagination} and legacy array
+      if (Array.isArray(res.data)) {
+        setItems(res.data);
+        setPagination(null);
+      } else {
+        setItems(res.data.data || []);
+        setPagination(res.data.pagination || null);
+      }
     } catch (err) {
-      console.error('Failed to load data:', err);
+      if (err.isRateLimit) setRateLimitError(err.rateLimitMessage);
+      else console.error('Failed to load data:', err);
     } finally {
       setLoading(false);
     }
   }, [config.api]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    loadData(currentPage);
+  }, [loadData, currentPage]);
 
   const handleAdd = () => {
     const initial = {};
@@ -209,7 +221,7 @@ function FeatureList({ feature }) {
     try {
       await config.api.create(formData);
       setShowModal(false);
-      loadData();
+      loadData(currentPage);
     } catch (err) {
       alert('Failed to create item: ' + (err.response?.data?.error || err.message));
     }
@@ -227,11 +239,17 @@ function FeatureList({ feature }) {
     <div className="feature-page">
       <div className="feature-header">
         <div className="feature-header-left">
-          <button className="btn-back" onClick={() => navigate('/')}>← Back</button>
+          <button className="btn-back" onClick={() => navigate('/')}>Back</button>
           <h2>{config.icon} {config.title}</h2>
         </div>
         <button className="btn-add" onClick={handleAdd}>+ Add New</button>
       </div>
+
+      {rateLimitError && (
+        <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: 8, padding: '12px 16px', color: '#b91c1c', marginBottom: 16 }}>
+          {rateLimitError}
+        </div>
+      )}
 
       <table className="list-table">
         <thead>
@@ -243,22 +261,47 @@ function FeatureList({ feature }) {
           </tr>
         </thead>
         <tbody>
-          {items.map((item, idx) => (
-            <tr key={item.id} onClick={() => navigate(`/${feature}/${item.id}`)}>
-              <td>{idx + 1}</td>
-              {config.columns.map(col => (
-                <td key={col.key}>
-                  {col.render ? col.render(item[col.key]) : (item[col.key] || '-')}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {items.map((item, idx) => {
+            const rowNum = pagination ? (currentPage - 1) * PAGE_SIZE + idx + 1 : idx + 1;
+            return (
+              <tr key={item.id} onClick={() => navigate(`/${feature}/${item.id}`)}>
+                <td>{rowNum}</td>
+                {config.columns.map(col => (
+                  <td key={col.key}>
+                    {col.render ? col.render(item[col.key]) : (item[col.key] || '-')}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
       {items.length === 0 && (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
           No items found. Click "Add New" to create one.
+        </div>
+      )}
+
+      {pagination && pagination.totalPages > 1 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, padding: '16px 0' }}>
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={!pagination.hasPrev}
+            style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: pagination.hasPrev ? 'pointer' : 'not-allowed', opacity: pagination.hasPrev ? 1 : 0.5 }}
+          >
+            Previous
+          </button>
+          <span style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
+            Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
+          </span>
+          <button
+            onClick={() => setCurrentPage(p => p + 1)}
+            disabled={!pagination.hasNext}
+            style={{ padding: '8px 16px', borderRadius: 6, border: '1px solid var(--border-color)', background: 'var(--bg-card)', color: 'var(--text-primary)', cursor: pagination.hasNext ? 'pointer' : 'not-allowed', opacity: pagination.hasNext ? 1 : 0.5 }}
+          >
+            Next
+          </button>
         </div>
       )}
 
