@@ -1,0 +1,218 @@
+// /api/custom-views — 4 endpoints (2 VIZ + 2 NON-VIZ)
+// VIZ 1: ride wait time heatmap (ride x hour)
+// VIZ 2: park traffic flow chart (zone movements over hour)
+// NON-VIZ 1: itinerary planner PDF (text/plain pseudo-PDF blob)
+// NON-VIZ 2: recommendation rules CRUD editor (age / preference)
+const express = require('express');
+const { authenticateToken } = require('../middleware/auth');
+
+const router = express.Router();
+
+// ----- In-memory store for recommendation rules (NON-VIZ 2) -----
+let _ruleSeq = 4;
+const recommendationRules = [
+  { id: 1, age_min: 3,  age_max: 7,  preference: 'gentle',    recommendation: 'Carousel, Storybook Lane, Junior Coaster' },
+  { id: 2, age_min: 8,  age_max: 12, preference: 'adventure', recommendation: 'Pirate Ship, Splash Mountain, River Rapids' },
+  { id: 3, age_min: 13, age_max: 17, preference: 'thrill',    recommendation: 'Mega Coaster, Drop Tower, Vortex' },
+  { id: 4, age_min: 18, age_max: 99, preference: 'relax',     recommendation: 'Garden Walk, Live Show, Fine Dining' },
+];
+
+// ----- Deterministic-ish seeded data for VIZ endpoints -----
+function seededRand(seed) {
+  // simple LCG
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return () => {
+    s = (s * 16807) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+// VIZ 1: GET /api/custom-views/wait-heatmap
+// Returns a matrix of ride x hour wait times.
+router.get('/wait-heatmap', authenticateToken, async (req, res) => {
+  try {
+    const rides = [
+      'Mega Coaster', 'Splash Mountain', 'Vortex', 'Carousel',
+      'Drop Tower', 'River Rapids', 'Junior Coaster', 'Pirate Ship',
+    ];
+    const hours = [];
+    for (let h = 9; h <= 21; h++) hours.push(h);
+
+    const rnd = seededRand(42);
+    const matrix = rides.map((ride, ri) => {
+      const row = hours.map((h) => {
+        // simulate peak around 13–17h
+        const peak = Math.max(0, 1 - Math.abs(h - 15) / 8);
+        const base = 5 + Math.round(rnd() * 15);
+        const surge = Math.round(peak * (35 + rnd() * 30));
+        return base + surge;
+      });
+      return { ride, waits: row };
+    });
+
+    res.json({
+      view: 'wait-heatmap',
+      kind: 'viz',
+      hours,
+      rides,
+      matrix,
+      unit: 'minutes',
+      generated_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// VIZ 2: GET /api/custom-views/traffic-flow
+// Returns guest counts per zone over the hours of operation.
+router.get('/traffic-flow', authenticateToken, async (req, res) => {
+  try {
+    const zones = ['Main Street', 'Adventureland', 'Frontierland', 'Fantasyland', 'Tomorrowland'];
+    const hours = [];
+    for (let h = 9; h <= 21; h++) hours.push(h);
+
+    const rnd = seededRand(99);
+    const series = zones.map((zone, zi) => {
+      const data = hours.map((h) => {
+        const peak = Math.max(0, 1 - Math.abs(h - (12 + zi)) / 7);
+        return Math.round(200 + rnd() * 400 + peak * 1500);
+      });
+      return { zone, guests: data };
+    });
+
+    res.json({
+      view: 'traffic-flow',
+      kind: 'viz',
+      hours,
+      zones,
+      series,
+      unit: 'guests',
+      generated_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// NON-VIZ 1: POST /api/custom-views/itinerary-pdf
+// Build a printable itinerary as plain-text "PDF" payload.
+// Body: { guest_name, party_size, interests:[], start_hour, end_hour }
+router.post('/itinerary-pdf', authenticateToken, async (req, res) => {
+  try {
+    const {
+      guest_name = 'Guest',
+      party_size = 2,
+      interests = ['rides', 'shows'],
+      start_hour = 9,
+      end_hour = 20,
+    } = req.body || {};
+
+    const lines = [];
+    lines.push('=========================================');
+    lines.push('  ADVENTURE KINGDOM — DAILY ITINERARY');
+    lines.push('=========================================');
+    lines.push(`Guest: ${guest_name}`);
+    lines.push(`Party size: ${party_size}`);
+    lines.push(`Interests: ${(interests || []).join(', ') || 'general'}`);
+    lines.push(`Window: ${start_hour}:00 – ${end_hour}:00`);
+    lines.push('-----------------------------------------');
+
+    const slot = (h, activity) => `  ${String(h).padStart(2, '0')}:00  →  ${activity}`;
+
+    const plan = [
+      'Park entry & Main Street stroll',
+      'Carousel (gentle warm-up)',
+      'Splash Mountain (FastPass recommended)',
+      'Lunch at Castle Bistro',
+      'Live show — Pirate Stunt Spectacular',
+      'Mega Coaster',
+      'Snack break — churros & lemonade',
+      'River Rapids',
+      'Souvenir shopping on Main Street',
+      'Fireworks finale at the Castle',
+    ];
+
+    let i = 0;
+    for (let h = start_hour; h <= end_hour && i < plan.length; h++, i++) {
+      lines.push(slot(h, plan[i]));
+    }
+    lines.push('-----------------------------------------');
+    lines.push('Generated by Park Views — Itinerary Planner');
+    lines.push(`Generated at: ${new Date().toISOString()}`);
+    lines.push('=========================================');
+
+    const body = lines.join('\n');
+
+    res.json({
+      view: 'itinerary-pdf',
+      kind: 'non-viz',
+      filename: `itinerary_${guest_name.replace(/\s+/g, '_').toLowerCase()}.txt`,
+      mime: 'text/plain',
+      bytes: body.length,
+      content: body,
+      generated_at: new Date().toISOString(),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// NON-VIZ 2: /api/custom-views/rules — CRUD recommendation rules
+router.get('/rules', authenticateToken, async (req, res) => {
+  res.json({
+    view: 'rules',
+    kind: 'non-viz',
+    count: recommendationRules.length,
+    rules: recommendationRules,
+  });
+});
+
+router.post('/rules', authenticateToken, async (req, res) => {
+  try {
+    const { age_min, age_max, preference, recommendation } = req.body || {};
+    if (age_min == null || age_max == null || !preference || !recommendation) {
+      return res.status(400).json({ error: 'age_min, age_max, preference, recommendation required' });
+    }
+    const rule = {
+      id: ++_ruleSeq,
+      age_min: Number(age_min),
+      age_max: Number(age_max),
+      preference: String(preference),
+      recommendation: String(recommendation),
+    };
+    recommendationRules.push(rule);
+    res.status(201).json(rule);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put('/rules/:id', authenticateToken, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const idx = recommendationRules.findIndex((r) => r.id === id);
+    if (idx === -1) return res.status(404).json({ error: 'Rule not found' });
+    const cur = recommendationRules[idx];
+    const next = { ...cur, ...req.body, id };
+    recommendationRules[idx] = next;
+    res.json(next);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/rules/:id', authenticateToken, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const idx = recommendationRules.findIndex((r) => r.id === id);
+    if (idx === -1) return res.status(404).json({ error: 'Rule not found' });
+    const [removed] = recommendationRules.splice(idx, 1);
+    res.json({ message: 'Rule deleted', rule: removed });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;

@@ -13,6 +13,14 @@ function Navbar({ user, onLogout }) {
       <div className="navbar-right">
         <button
           type="button"
+          onClick={() => navigate('/custom-views')}
+          data-testid="nav-park-views"
+          style={{ background: '#4ecca3', color: '#0f0f1a', border: 'none', padding: '6px 14px', borderRadius: 8, marginRight: 12, cursor: 'pointer', fontWeight: 700 }}
+        >
+          🏰 Park Views
+        </button>
+        <button
+          type="button"
           onClick={() => navigate('/advanced-ai')}
           style={{ background: '#a855f7', color: 'white', border: 'none', padding: '6px 14px', borderRadius: 8, marginRight: 12, cursor: 'pointer', fontWeight: 600 }}
         >

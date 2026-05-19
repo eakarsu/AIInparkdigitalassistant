@@ -7,6 +7,7 @@ import FeatureDetail from './pages/FeatureDetail';
 import AIAssistant from './pages/AIAssistant';
 import AdvancedAITools from './pages/AdvancedAITools';
 import Pass5Tools from './pages/Pass5Tools';
+import CustomViewsPage from './pages/CustomViewsPage';
 import Navbar from './components/Navbar';
 
 // === Batch 04 Gaps & Frontend Mounts ===
@@ -106,6 +107,7 @@ function App() {
           <Route path="/ai-assistant" element={<AIAssistant />} />
           <Route path="/advanced-ai" element={<AdvancedAITools />} />
           <Route path="/pass5-tools" element={<Pass5Tools />} />
+          <Route path="/custom-views" element={<CustomViewsPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>

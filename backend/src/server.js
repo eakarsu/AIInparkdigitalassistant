@@ -78,6 +78,15 @@ app.use('/api/gap-no-webhook-surface-for-ticket-scan', route_gap_no_webhook_surf
 app.use('/api/gap-no-audit-log-0-references', route_gap_no_audit_log_0_references);
 app.use('/api/gap-no-file-upload-for-guest-photo', route_gap_no_file_upload_for_guest_photo);
 
+// === Park Views — Custom Views (2 VIZ + 2 NON-VIZ) ===
+// MUST be mounted BEFORE the 404 catch-all.
+app.use('/api/custom-views', require('./routes/customViews'));
+
+// 404 catch-all for unknown /api routes — keep this LAST.
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'Not found', path: req.originalUrl });
+});
+
 app.listen(PORT, () => {
   console.log(`Adventure Kingdom Backend running on port ${PORT}`);
 });
