@@ -8,6 +8,7 @@ import AIAssistant from './pages/AIAssistant';
 import AdvancedAITools from './pages/AdvancedAITools';
 import Pass5Tools from './pages/Pass5Tools';
 import CustomViewsPage from './pages/CustomViewsPage';
+import ItineraryHeatStressGuard from './pages/ItineraryHeatStressGuard';
 import Navbar from './components/Navbar';
 
 // === Batch 04 Gaps & Frontend Mounts ===
@@ -26,6 +27,11 @@ import GapNoMobilePushNotifications from './pages/GapNoMobilePushNotifications';
 import GapNoWebhookSurfaceForTicketScan from './pages/GapNoWebhookSurfaceForTicketScan';
 import GapNoAuditLog0References from './pages/GapNoAuditLog0References';
 import GapNoFileUploadForGuestPhoto from './pages/GapNoFileUploadForGuestPhoto';
+
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+import TimelineView from './pages/TimelineView';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -56,6 +62,10 @@ function App() {
     return (
       <Router>
         <Routes>
+        <Route path="/insights/timeline" element={<TimelineView />} />
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
           <Route path="/login" element={<Login onLogin={handleLogin} />} />
           {/* // === Batch 04 Gaps & Frontend Mounts === */}
           <Route path="/cf-agentic-personal-concierge-building-itin" element={<CfAgenticPersonalConciergeBuildingItin />} />
@@ -108,6 +118,7 @@ function App() {
           <Route path="/advanced-ai" element={<AdvancedAITools />} />
           <Route path="/pass5-tools" element={<Pass5Tools />} />
           <Route path="/custom-views" element={<CustomViewsPage />} />
+          <Route path="/itinerary-heat-stress-guard" element={<ItineraryHeatStressGuard />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
