@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const pool = require('../models/database');
-const { generateToken } = require('../middleware/auth');
+const { authenticateToken, generateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -54,6 +54,10 @@ router.post('/register', async (req, res) => {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+router.get('/me', authenticateToken, (req, res) => {
+  res.json({ user: req.user });
 });
 
 module.exports = router;

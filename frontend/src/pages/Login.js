@@ -21,12 +21,6 @@ function Login({ onLogin }) {
     }
   };
 
-  const fillCredentials = () => {
-    setEmail('admin@adventurekingdom.com');
-    setPassword('password123');
-    setError('');
-  };
-
   return (
     <div className="login-page">
       <div className="login-container">
@@ -64,9 +58,6 @@ function Login({ onLogin }) {
           </button>
         </form>
 
-        <button className="btn-fill-credentials" onClick={fillCredentials}>
-          Quick Login (Demo Credentials)
-        </button>
       </div>
     </div>
   );

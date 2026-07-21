@@ -62,6 +62,7 @@ app.use('/api/integrations', require('./routes/integrations'));
 app.use('/api/crowd-intelligence', require('./routes/crowdIntelligence'));
 app.use('/api/accessibility-advisor', require('./routes/accessibilityAdvisor'));
 app.use('/api/itinerary-heat-stress-guard', require('./routes/itineraryHeatStressGuard'));
+app.use('/api/governed-guidance', require('./middleware/auth').authenticateToken, require('./routes/governedGuidance'));
 
 // Health check
 app.get('/api/health', (req, res) => {

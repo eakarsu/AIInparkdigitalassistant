@@ -1,12 +1,9 @@
 const { Pool } = require('pg');
 require('dotenv').config({ path: require('path').join(__dirname, '../../../.env') });
+const required = (name) => { const value = process.env[name]; if (!value) throw new Error(`${name} is required`); return value; };
 
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'parkassistant',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
+  host: required('DB_HOST'), port: Number(required('DB_PORT')), database: required('DB_NAME'), user: required('DB_USER'), password: required('DB_PASSWORD'),
 });
 
 pool.on('error', (err) => {
