@@ -8,6 +8,7 @@ const router = express.Router();
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-3-5-sonnet-20241022';
+const OPENROUTER_BASE_URL = new URL(process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1');
 
 // ====== RATE LIMITER ======
 const aiRateLimitStore = new Map();
@@ -134,8 +135,9 @@ function callOpenRouter(messages) {
     });
 
     const options = {
-      hostname: 'openrouter.ai',
-      path: '/api/v1/chat/completions',
+      hostname: OPENROUTER_BASE_URL.hostname,
+      port: OPENROUTER_BASE_URL.port || undefined,
+      path: `${OPENROUTER_BASE_URL.pathname.replace(/\/$/, '')}/chat/completions`,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -150,7 +152,11 @@ function callOpenRouter(messages) {
       res.on('data', (chunk) => body += chunk);
       res.on('end', () => {
         try {
-          resolve(JSON.parse(body));
+          const parsed = JSON.parse(body);
+          if (res.statusCode < 200 || res.statusCode >= 300) throw new Error(parsed.error?.message || `OpenRouter request failed with HTTP ${res.statusCode}`);
+          const content = parsed.choices?.[0]?.message?.content;
+          if (!content || !String(content).trim()) throw new Error('OpenRouter returned empty content');
+          resolve(parsed);
         } catch (e) {
           reject(new Error('Failed to parse OpenRouter response'));
         }
