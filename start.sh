@@ -98,6 +98,6 @@ if [ "${ALLOW_SCHEMA_MIGRATION:-false}" = "true" ]; then
   node "$project_dir/backend/create-admin.js"
 fi
 (cd "$project_dir/backend" && BACKEND_PORT="$backend_port" npm start) & backend_pid=$!
-(cd "$project_dir/frontend" && BROWSER=none HOST="${HOST:-127.0.0.1}" PORT="$frontend_port" REACT_APP_API_ORIGIN="http://127.0.0.1:$backend_port" npm start) & frontend_pid=$!
+(cd "$project_dir/frontend" && BROWSER=none HOST="${HOST:-127.0.0.1}" PORT="$frontend_port" REACT_APP_API_ORIGIN="http://127.0.0.1:$backend_port" REACT_APP_API_URL="http://127.0.0.1:$backend_port/api" npm start) & frontend_pid=$!
 echo 'Services started without installing dependencies or terminating port owners.'
 wait "$backend_pid" "$frontend_pid"
