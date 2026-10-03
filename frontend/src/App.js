@@ -10,7 +10,6 @@ import Pass5Tools from './pages/Pass5Tools';
 import CustomViewsPage from './pages/CustomViewsPage';
 import ItineraryHeatStressGuard from './pages/ItineraryHeatStressGuard';
 import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
 
 // === Batch 04 Gaps & Frontend Mounts ===
 import CfAgenticPersonalConciergeBuildingItin from './pages/CfAgenticPersonalConciergeBuildingItin';
@@ -93,8 +92,8 @@ function App() {
 
   return (
     <Router>
-      <Sidebar user={user} onLogout={handleLogout} />
-      <div className="app-shell">
+      <Navbar user={user} onLogout={handleLogout} />
+      <div className="app-container">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/rides" element={<FeatureList feature="rides" />} />
