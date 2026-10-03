@@ -1,3 +1,4 @@
+import AppSidebar from './components/AppSidebar';
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
@@ -92,6 +93,9 @@ function App() {
 
   return (
     <Router>
+      <div className="codex-nav-shell">
+        <AppSidebar />
+        <div className="codex-protected-main">
       <Navbar user={user} onLogout={handleLogout} />
       <div className="app-container">
         <Routes>
@@ -121,6 +125,8 @@ function App() {
           <Route path="/itinerary-heat-stress-guard" element={<ItineraryHeatStressGuard />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
+      </div>
+        </div>
       </div>
     </Router>
   );
